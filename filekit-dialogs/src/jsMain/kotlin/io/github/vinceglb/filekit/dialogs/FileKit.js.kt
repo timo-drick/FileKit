@@ -4,13 +4,13 @@ import io.github.vinceglb.filekit.FileExt
 import io.github.vinceglb.filekit.FileHandleFile
 import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 import org.w3c.files.FileList
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 @OptIn(ExperimentalWasmJsInterop::class)
 internal actual suspend fun platformOpenFilePickerWeb(
@@ -19,7 +19,7 @@ internal actual suspend fun platformOpenFilePickerWeb(
     directoryMode: Boolean, // select a directory
 ): List<FileHandleFile>? {
     val files = withContext(Dispatchers.Default) {
-        suspendCoroutine { continuation ->
+        suspendCancellableCoroutine { continuation ->
             // Create input element
             val input = document.createElement("input") as HTMLInputElementExt
 

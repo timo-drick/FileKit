@@ -3,6 +3,7 @@ package io.github.vinceglb.filekit
 import io.github.vinceglb.filekit.exceptions.FileKitException
 import io.github.vinceglb.filekit.mimeType.MimeType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.khronos.webgl.ArrayBuffer
@@ -14,7 +15,6 @@ import org.w3c.files.FilePropertyBag
 import org.w3c.files.FileReader
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.js.JsAny
 import kotlin.js.JsArray
@@ -107,7 +107,7 @@ public actual fun PlatformFile.stopAccessingSecurityScopedResource() {}
 
 @OptIn(ExperimentalWasmJsInterop::class)
 public actual suspend fun PlatformFile.readBytes(): ByteArray = withContext(Dispatchers.Main) {
-    suspendCoroutine { continuation ->
+    suspendCancellableCoroutine { continuation ->
         val reader = FileReader()
         reader.onload = { event ->
             try {
