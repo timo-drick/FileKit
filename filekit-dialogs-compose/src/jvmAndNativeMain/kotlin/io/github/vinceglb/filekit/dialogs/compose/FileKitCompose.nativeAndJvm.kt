@@ -11,20 +11,14 @@ import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.openFileSaver
 import kotlinx.coroutines.launch
 
-/**
- * Creates a launcher for the file saver dialog.
- *
- * @param dialogSettings Platform-specific settings for the dialog.
- * @param onResult Callback to receive the result of the file saver dialog.
- * @return A [SaverResultLauncher] instance.
- */
 @Composable
 internal actual fun rememberPlatformFileSaverLauncher(
     dialogSettings: FileKitDialogSettings,
     onResult: (PlatformFile?) -> Unit,
 ): SaverResultLauncher {
     val coroutineScope = rememberCoroutineScope()
-    val currentDialogSettings by rememberUpdatedState(dialogSettings)
+    val stableDialogSettings = rememberStableDialogSettings(dialogSettings)
+    val currentDialogSettings by rememberUpdatedState(stableDialogSettings)
     val currentOnResult by rememberUpdatedState(onResult)
 
     return remember {

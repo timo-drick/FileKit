@@ -29,9 +29,10 @@ public actual fun rememberDirectoryPickerLauncher(
     onResult: (PlatformFile?) -> Unit,
 ): PickerResultLauncher {
     val coroutineScope = rememberCoroutineScope()
+    val stableDialogSettings = rememberStableDialogSettings(dialogSettings)
 
     val currentDirectory by rememberUpdatedState(directory)
-    val currentDialogSettings by rememberUpdatedState(dialogSettings)
+    val currentDialogSettings by rememberUpdatedState(stableDialogSettings)
     val currentOnResult by rememberUpdatedState(onResult)
 
     return remember {
@@ -56,11 +57,12 @@ internal actual fun <PickerResult, ConsumedResult> rememberPlatformFilePickerLau
     onResult: (ConsumedResult) -> Unit,
 ): PickerResultLauncher {
     val coroutineScope = rememberCoroutineScope()
+    val stableDialogSettings = rememberStableDialogSettings(dialogSettings)
 
     val currentType by rememberUpdatedState(type)
     val currentMode by rememberUpdatedState(mode)
     val currentDirectory by rememberUpdatedState(directory)
-    val currentDialogSettings by rememberUpdatedState(dialogSettings)
+    val currentDialogSettings by rememberUpdatedState(stableDialogSettings)
     val currentOnConsumed by rememberUpdatedState(onResult)
 
     return remember {

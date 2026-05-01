@@ -38,6 +38,12 @@ val launcher = rememberFilePickerLauncher(
 ```
 </CodeGroup>
 
+<Warning>
+On iOS, remember FileKit Compose launchers from a stable/root Compose scope, not
+inside transient surfaces such as `ModalBottomSheet`, dialogs, popups, or
+dropdowns. [Learn more in GitHub issue #547](https://github.com/vinceglb/FileKit/issues/547).
+</Warning>
+
 ### Maximum number of items
 
 On both Android and iOS, you can set a limit on the number of items a user can select by passing the `maxItems` parameter to `FileKitMode.Multiple()`:

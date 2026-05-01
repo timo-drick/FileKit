@@ -1,10 +1,15 @@
 package io.github.vinceglb.filekit.dialogs
 
+import platform.UIKit.UIViewController
+
 /**
  * iOS implementation of [FileKitOpenCameraSettings].
- * Currently, there are no specific settings for opening the camera on iOS.
+ *
+ * @property presenter The view controller used to present the camera picker.
  */
-public actual class FileKitOpenCameraSettings {
+public actual class FileKitOpenCameraSettings(
+    public val presenter: UIViewController? = null,
+) {
     public actual companion object {
         /**
          * Creates a default instance of [FileKitOpenCameraSettings].

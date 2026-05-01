@@ -25,8 +25,10 @@ public actual fun rememberCameraPickerLauncher(
 ): PhotoResultLauncher {
     // Coroutine
     val coroutineScope = rememberCoroutineScope()
+    val stableOpenCameraSettings = rememberStableOpenCameraSettings(openCameraSettings)
 
     // Updated state
+    val currentOpenCameraSettings by rememberUpdatedState(stableOpenCameraSettings)
     val currentOnResult by rememberUpdatedState(onResult)
 
     // FileKit
@@ -40,7 +42,7 @@ public actual fun rememberCameraPickerLauncher(
                     type = type,
                     cameraFacing = cameraFacing,
                     destinationFile = destinationFile,
-                    openCameraSettings = openCameraSettings,
+                    openCameraSettings = currentOpenCameraSettings,
                 )
                 currentOnResult(result)
             }
