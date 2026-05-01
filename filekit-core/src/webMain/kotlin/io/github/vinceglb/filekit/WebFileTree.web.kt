@@ -46,11 +46,13 @@ public fun PlatformFile.Companion.fromWebDirectoryFiles(
             .forEach { directoryName ->
                 directoryPath = "$directoryPath/$directoryName"
                 parent = directories.getOrPut(directoryPath) {
-                    WebFile.DirectoryWrapper(
+                    val directory = WebFile.DirectoryWrapper(
                         name = directoryName,
                         path = directoryPath,
                         parent = parent,
-                    ).also(parent.mutableChildren::add)
+                    )
+                    parent.mutableChildren.add(directory)
+                    directory
                 }
             }
 

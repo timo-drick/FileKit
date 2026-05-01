@@ -57,12 +57,23 @@ internal suspend fun openBrowserFileInput(
 
 private val FileKitType.acceptAttribute: String
     get() = when (this) {
-        is FileKitType.Image -> "image/*"
-        is FileKitType.Video -> "video/*"
-        is FileKitType.ImageAndVideo -> "image/*,video/*"
-        is FileKitType.File -> extensions
-            ?.joinToString(",") { ".$it" }
-            .orEmpty()
+        is FileKitType.Image -> {
+            "image/*"
+        }
+
+        is FileKitType.Video -> {
+            "video/*"
+        }
+
+        is FileKitType.ImageAndVideo -> {
+            "image/*,video/*"
+        }
+
+        is FileKitType.File -> {
+            extensions
+                ?.joinToString(",") { ".$it" }
+                .orEmpty()
+        }
     }
 
 @JsName("HTMLInputElement")

@@ -15,12 +15,11 @@ import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 public fun rememberFileSaverLauncher(
     dialogSettings: FileKitDialogSettings,
     onResult: (PlatformFile?) -> Unit,
-): SaverResultLauncher {
-    return rememberPlatformFileSaverLauncher(
+): SaverResultLauncher =
+    rememberPlatformFileSaverLauncher(
         dialogSettings = dialogSettings,
         onResult = onResult,
     )
-}
 
 @Composable
 internal expect fun rememberPlatformFileSaverLauncher(

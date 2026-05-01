@@ -9,14 +9,14 @@ import kotlin.js.JsName
 import kotlin.js.JsNumber
 import kotlin.js.definedExternally
 
-@OptIn(ExperimentalWasmJsInterop::class)
-@JsName("File")
 /**
  * External declaration for the browser's native File object.
  *
  * This includes web-specific metadata such as [webkitRelativePath], which is
  * used to rebuild virtual directory trees from directory picker results.
  */
+@OptIn(ExperimentalWasmJsInterop::class)
+@JsName("File")
 public open external class BrowserFile(
     fileBits: JsArray<JsAny?>,
     fileName: String,

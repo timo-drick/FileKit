@@ -61,11 +61,15 @@ public actual val PlatformFile.path: String
     }
 
 public actual fun PlatformFile.mimeType(): MimeType? = when (val file = webFile) {
-    is WebFile.FileWrapper -> file.type
-        .takeIf { it.isNotBlank() }
-        ?.let { MimeType.parse(it) }
+    is WebFile.FileWrapper -> {
+        file.type
+            .takeIf { it.isNotBlank() }
+            ?.let { MimeType.parse(it) }
+    }
 
-    is WebFile.DirectoryWrapper -> null
+    is WebFile.DirectoryWrapper -> {
+        null
+    }
 }
 
 public actual fun PlatformFile.lastModified(): Instant = when (val file = webFile) {
