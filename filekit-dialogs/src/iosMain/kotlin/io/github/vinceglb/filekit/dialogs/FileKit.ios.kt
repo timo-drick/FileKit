@@ -98,6 +98,7 @@ internal actual suspend fun FileKit.platformOpenFilePicker(
             },
             contentTypes = type.contentTypes,
             directory = directory,
+            dialogSettings = dialogSettings,
         )?.map { PlatformFile(it) }
 
         if (picked.isNullOrEmpty()) {
@@ -122,6 +123,7 @@ public actual suspend fun FileKit.openDirectoryPicker(
     mode = Mode.Directory,
     contentTypes = listOf(UTTypeFolder),
     directory = directory,
+    dialogSettings = dialogSettings,
 )?.firstOrNull()?.let { PlatformFile(it) }
 
 /**
@@ -198,7 +200,7 @@ public actual suspend fun FileKit.openFileSaver(
         pickerController.delegate = documentPickerDelegate
 
         // Present the picker controller
-        UIApplication.sharedApplication.topMostViewController()?.presentViewController(
+        dialogSettings.presenterViewController()?.presentViewController(
             pickerController,
             animated = true,
             completion = null,
@@ -264,7 +266,7 @@ public actual suspend fun FileKit.openCameraPicker(
             FileKitCameraFacing.System -> {}
         }
 
-        UIApplication.sharedApplication.topMostViewController()?.presentViewController(
+        openCameraSettings.presenterViewController()?.presentViewController(
             pickerController,
             animated = true,
             completion = null,
@@ -302,7 +304,7 @@ public actual suspend fun FileKit.shareFile(
 ) {
     if (files.isEmpty()) return
 
-    val viewController = UIApplication.sharedApplication.topMostViewController() ?: return
+    val viewController = shareSettings.presenterViewController() ?: return
 
     files.forEach { it.startAccessingSecurityScopedResource() }
     // Ensure we always pass a file URL to the activity items; otherwise iOS may treat the
@@ -371,10 +373,20 @@ private fun isIpad(): Boolean {
     return device.userInterfaceIdiom == UIUserInterfaceIdiomPad
 }
 
+private fun FileKitDialogSettings.presenterViewController(): UIViewController? =
+    presenter ?: UIApplication.sharedApplication.topMostViewController()
+
+private fun FileKitOpenCameraSettings.presenterViewController(): UIViewController? =
+    presenter ?: UIApplication.sharedApplication.topMostViewController()
+
+private fun FileKitShareSettings.presenterViewController(): UIViewController? =
+    presenter ?: UIApplication.sharedApplication.topMostViewController()
+
 private suspend fun callPicker(
     mode: Mode,
     contentTypes: List<UTType>,
     directory: PlatformFile?,
+    dialogSettings: FileKitDialogSettings,
 ): List<NSURL>? = withContext(Dispatchers.Main) {
     suspendCancellableCoroutine { continuation ->
         // Create a picker delegate
@@ -396,7 +408,7 @@ private suspend fun callPicker(
         pickerController.delegate = documentPickerDelegate
 
         // Present the picker controller
-        UIApplication.sharedApplication.topMostViewController()?.presentViewController(
+        dialogSettings.presenterViewController()?.presentViewController(
             pickerController,
             animated = true,
             completion = null,
@@ -450,7 +462,7 @@ private suspend fun getPhPickerResults(
     controller.presentationController?.delegate = phPickerDismissDelegate
 
     // Present the picker controller
-    UIApplication.sharedApplication.topMostViewController()?.presentViewController(
+    dialogSettings.presenterViewController()?.presentViewController(
         controller,
         animated = true,
         completion = null,
