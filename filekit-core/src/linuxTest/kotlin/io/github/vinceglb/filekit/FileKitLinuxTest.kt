@@ -58,6 +58,15 @@ class FileKitLinuxTest {
     }
 
     @Test
+    fun FileKit_asyncStorageDirectories_matchPlatformDirectories() = runTest {
+        FileKit.init(appId = APP_ID)
+
+        assertEquals(FileKit.filesDir.path, FileKit.filesDirectory().path)
+        assertEquals(FileKit.cacheDir.path, FileKit.cacheDirectory().path)
+        assertEquals(FileKit.databasesDir.path, FileKit.databasesDirectory().path)
+    }
+
+    @Test
     fun FileKit_filesDir_withoutCustomDirectory_resolvesUnderXdgDataHome() {
         FileKit.init(appId = APP_ID)
 

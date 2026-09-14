@@ -36,6 +36,12 @@ public expect val FileKit.databasesDir: PlatformFile
  */
 public expect val FileKit.projectDir: PlatformFile
 
+public actual suspend fun FileKit.filesDirectory(): PlatformFile = filesDir
+
+public actual suspend fun FileKit.cacheDirectory(): PlatformFile = cacheDir
+
+public actual suspend fun FileKit.databasesDirectory(): PlatformFile = databasesDir
+
 /**
  * Saves an image to the platform's gallery or photo album.
  *

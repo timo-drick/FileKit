@@ -173,6 +173,69 @@ class PlatformFileWebTest {
         )
     }
 
+    @Test
+    fun testOriginPrivateFileSystemPathFromRoot() {
+        assertEquals(
+            expected = "hello.txt",
+            actual = "".appendOriginPrivateFileSystemPath("hello.txt"),
+        )
+    }
+
+    @Test
+    fun testOriginPrivateFileSystemPathFromDirectory() {
+        assertEquals(
+            expected = "folder/hello.txt",
+            actual = "folder".appendOriginPrivateFileSystemPath("hello.txt"),
+        )
+    }
+
+    @Test
+    fun testOriginPrivateFileSystemRoot() = runTest {
+        val root = PlatformFile.fromOriginPrivateFileSystem()
+
+        assertTrue(root.isDirectory())
+        assertFalse(root.isRegularFile())
+        assertNull(root.parent())
+    }
+
+    @Test
+    fun testOriginPrivateFileSystemStorageDirectories() = runTest {
+        val filesDir = FileKit.filesDirectory()
+        val cacheDir = FileKit.cacheDirectory()
+        val databasesDir = FileKit.databasesDirectory()
+
+        assertTrue(filesDir.isDirectory())
+        assertTrue(cacheDir.isDirectory())
+        assertTrue(databasesDir.isDirectory())
+        assertEquals("cache", cacheDir.name)
+        assertEquals("databases", databasesDir.name)
+        assertEquals("", filesDir.path)
+        assertEquals("cache", cacheDir.path)
+        assertEquals("databases", databasesDir.path)
+    }
+
+    @Test
+    fun testOriginPrivateFileSystemFileOperations() = runTest {
+        val cacheDir = FileKit.cacheDirectory()
+        val file = cacheDir.file(name = "filekit-opfs-test.txt", create = true)
+
+        try {
+            file.writeStringAsync("Hello, OPFS!")
+
+            assertTrue(file.existsAsync())
+            assertEquals("Hello, OPFS!", file.readString())
+            assertEquals(12L, file.sizeAsync())
+            assertEquals(
+                listOf("filekit-opfs-test.txt"),
+                cacheDir.listAsync().filter { it.name == file.name }.map { it.name },
+            )
+        } finally {
+            file.deleteAsync(mustExist = false)
+        }
+
+        assertFalse(file.existsAsync())
+    }
+
     private fun PlatformFile.webFileWrapper(): WebFile.FileWrapper =
         assertIs<WebFile.FileWrapper>(webFile)
 }
