@@ -199,15 +199,7 @@ public actual fun PlatformFile.parent(): PlatformFile? = when (androidFile) {
     }
 
     is AndroidFile.UriWrapper -> {
-        val uri = androidFile.uri
-        val parentUri = uri
-            .buildUpon()
-            .path(uri.path?.substringBeforeLast('/'))
-            .build()
-
-        DocumentFile.fromTreeUri(FileKit.context, parentUri)?.let {
-            PlatformFile(it.uri)
-        }
+        androidFile.uri.parentDocumentUriOrNull()?.let(::PlatformFile)
     }
 }
 
@@ -1065,6 +1057,24 @@ private fun Uri.queryDocumentInfos(childrenUri: Uri): List<AndroidDocumentInfo> 
     emptyList()
 }
 
+private fun Uri.parentDocumentUriOrNull(): Uri? {
+    // External storage document IDs have the form volume:path.
+    // Other providers may use opaque IDs that do not encode a parent.
+    if (!isTreeUriCompat() || authority != "com.android.externalstorage.documents") {
+        return null
+    }
+
+    val treeDocumentId = treeDocumentId()
+    val documentId = documentId()
+    val treePrefix = if (treeDocumentId.endsWith(':')) treeDocumentId else "$treeDocumentId/"
+    if (documentId == treeDocumentId || !documentId.startsWith(treePrefix)) {
+        return null
+    }
+
+    val parentDocumentId = documentId.substringBeforeLast('/', missingDelimiterValue = treeDocumentId)
+    return DocumentsContract.buildDocumentUriUsingTree(this, parentDocumentId)
+}
+
 private fun Uri.parentDocumentUriAndName(): Pair<Uri, String> {
     val (parentDocumentId, childName) = parentDocumentIdAndNameOrNull()
         ?: throw FileKitException("Uri does not describe a child document: $this")
@@ -1076,6 +1086,10 @@ private fun Uri.parentDocumentIdAndNameOrNull(): Pair<String, String>? {
     val documentId = try {
         documentId()
     } catch (_: IllegalArgumentException) {
+        return null
+    }
+    // The selected tree root has no parent within the grant, even if its ID contains '/'.
+    if (isTreeUriCompat() && documentId == treeDocumentId()) {
         return null
     }
     val parentDocumentId = documentId.substringBeforeLast('/', missingDelimiterValue = "")
