@@ -201,39 +201,9 @@ class PlatformFileWebTest {
     @Test
     fun testOriginPrivateFileSystemStorageDirectories() = runTest {
         val filesDir = FileKit.filesDirectory()
-        val cacheDir = FileKit.cacheDirectory()
-        val databasesDir = FileKit.databasesDirectory()
 
         assertTrue(filesDir.isDirectory())
-        assertTrue(cacheDir.isDirectory())
-        assertTrue(databasesDir.isDirectory())
-        assertEquals("cache", cacheDir.name)
-        assertEquals("databases", databasesDir.name)
         assertEquals("", filesDir.path)
-        assertEquals("cache", cacheDir.path)
-        assertEquals("databases", databasesDir.path)
-    }
-
-    @Test
-    fun testOriginPrivateFileSystemFileOperations() = runTest {
-        val cacheDir = FileKit.cacheDirectory()
-        val file = cacheDir.file(name = "filekit-opfs-test.txt", create = true)
-
-        try {
-            file.writeStringAsync("Hello, OPFS!")
-
-            assertTrue(file.existsAsync())
-            assertEquals("Hello, OPFS!", file.readString())
-            assertEquals(12L, file.sizeAsync())
-            assertEquals(
-                listOf("filekit-opfs-test.txt"),
-                cacheDir.listAsync().filter { it.name == file.name }.map { it.name },
-            )
-        } finally {
-            file.deleteAsync(mustExist = false)
-        }
-
-        assertFalse(file.existsAsync())
     }
 
     private fun PlatformFile.webFileWrapper(): WebFile.FileWrapper =

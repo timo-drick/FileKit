@@ -19,17 +19,6 @@ public expect suspend fun PlatformFile.directory(
     create: Boolean = false,
 ): PlatformFile
 
-/** Replaces this file's content with [bytes]. */
-public expect suspend fun PlatformFile.writeBytes(bytes: ByteArray)
-
-/** Replaces this file's content with [string]. */
-public suspend fun PlatformFile.writeStringAsync(string: String) {
-    writeBytes(string.encodeToByteArray())
-}
-
-/** Deletes this file or empty directory. */
-public expect suspend fun PlatformFile.deleteAsync(mustExist: Boolean = true)
-
 /** Returns whether this file currently exists. */
 public expect suspend fun PlatformFile.existsAsync(): Boolean
 

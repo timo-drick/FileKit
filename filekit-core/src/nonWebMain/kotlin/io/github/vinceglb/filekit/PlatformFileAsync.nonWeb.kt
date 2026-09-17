@@ -34,14 +34,6 @@ public actual suspend fun PlatformFile.directory(
     return directory
 }
 
-public actual suspend fun PlatformFile.writeBytes(bytes: ByteArray) {
-    this write bytes
-}
-
-public actual suspend fun PlatformFile.deleteAsync(mustExist: Boolean) {
-    delete(mustExist)
-}
-
 public actual suspend fun PlatformFile.existsAsync(): Boolean = exists()
 
 public actual suspend fun PlatformFile.sizeAsync(): Long = size()

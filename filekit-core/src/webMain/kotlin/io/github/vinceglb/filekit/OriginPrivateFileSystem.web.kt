@@ -11,15 +11,15 @@ import kotlin.js.Promise
  * Reads the root directory of the browser's origin private file system (OPFS).
  *
  * The returned [PlatformFile] retains a live OPFS directory handle. Use
- * [listOriginPrivateFileSystemEntries], [originPrivateFileSystemFile], and
- * [originPrivateFileSystemDirectory] to interact with its entries
+ * [listAsync], [file], and
+ * [directory] to interact with its entries
  * asynchronously.
  *
  * OPFS is available only in secure contexts in browsers that implement the File
  * System API.
  */
 @OptIn(ExperimentalWasmJsInterop::class)
-public suspend fun PlatformFile.Companion.fromOriginPrivateFileSystem(): PlatformFile {
+internal suspend fun PlatformFile.Companion.fromOriginPrivateFileSystem(): PlatformFile {
     val root = browserNavigator.storage.getDirectory().await()
     return PlatformFile(
         WebFile.OriginPrivateDirectory(
@@ -31,10 +31,8 @@ public suspend fun PlatformFile.Companion.fromOriginPrivateFileSystem(): Platfor
 }
 
 @OptIn(ExperimentalWasmJsInterop::class)
-public suspend fun PlatformFile.listOriginPrivateFileSystemEntries(): List<PlatformFile> {
-    val directory = webFile as? WebFile.OriginPrivateDirectory
-        ?: throw FileKitException("This file is not an origin private file system directory")
-    val iterator = directory.handle.values()
+internal suspend fun WebFile.OriginPrivateDirectory.list(): List<PlatformFile> {
+    val iterator = handle.values()
     val entries = mutableListOf<PlatformFile>()
 
     while (true) {
@@ -43,19 +41,19 @@ public suspend fun PlatformFile.listOriginPrivateFileSystemEntries(): List<Platf
 
         val handle = entry.value
             ?: throw FileKitException("Could not read origin private file system entry")
-        val path = directory.path.appendOriginPrivateFileSystemPath(handle.name)
+        val path = path.appendOriginPrivateFileSystemPath(handle.name)
         entries += PlatformFile(
             when (handle.kind) {
                 "file" -> WebFile.OriginPrivateFile(
                     handle = handle.unsafeCast<FileSystemFileHandle>(),
                     path = path,
-                    parent = directory,
+                    parent = this,
                 )
 
                 "directory" -> WebFile.OriginPrivateDirectory(
                     handle = handle.unsafeCast<FileSystemDirectoryHandle>(),
                     path = path,
-                    parent = directory,
+                    parent = this,
                 )
 
                 else -> throw FileKitException("Unsupported origin private file system entry type: ${handle.kind}")
@@ -68,59 +66,40 @@ public suspend fun PlatformFile.listOriginPrivateFileSystemEntries(): List<Platf
 
 /** Returns an OPFS file in this directory, creating it when [create] is true. */
 @OptIn(ExperimentalWasmJsInterop::class)
-public suspend fun PlatformFile.originPrivateFileSystemFile(
+internal suspend fun WebFile.OriginPrivateDirectory.file(
     name: String,
     create: Boolean = false,
-): PlatformFile {
-    val directory = webFile as? WebFile.OriginPrivateDirectory
-        ?: throw FileKitException("This file is not an origin private file system directory")
-    return PlatformFile(
-        WebFile.OriginPrivateFile(
-            handle = directory.handle.getFileHandle(name, FileSystemGetHandleOptions(create)).await(),
-            path = directory.path.appendOriginPrivateFileSystemPath(name),
-            parent = directory,
-        ),
-    )
-}
+): PlatformFile = PlatformFile(
+    WebFile.OriginPrivateFile(
+        handle = handle.getFileHandle(name, FileSystemGetHandleOptions(create)).await(),
+        path = path.appendOriginPrivateFileSystemPath(name),
+        parent = this,
+    ),
+)
 
 /** Returns an OPFS directory in this directory, creating it when [create] is true. */
 @OptIn(ExperimentalWasmJsInterop::class)
-public suspend fun PlatformFile.originPrivateFileSystemDirectory(
+internal suspend fun WebFile.OriginPrivateDirectory.directory(
     name: String,
     create: Boolean = false,
-): PlatformFile {
-    val directory = webFile as? WebFile.OriginPrivateDirectory
-        ?: throw FileKitException("This file is not an origin private file system directory")
-    return PlatformFile(
-        WebFile.OriginPrivateDirectory(
-            handle = directory.handle.getDirectoryHandle(name, FileSystemGetHandleOptions(create)).await(),
-            path = directory.path.appendOriginPrivateFileSystemPath(name),
-            parent = directory,
-        ),
-    )
-}
+): PlatformFile = PlatformFile(
+    WebFile.OriginPrivateDirectory(
+        handle = handle.getDirectoryHandle(name, FileSystemGetHandleOptions(create)).await(),
+        path = path.appendOriginPrivateFileSystemPath(name),
+        parent = this,
+    ),
+)
 
 /** Replaces the contents of this live OPFS file with [bytes]. */
 @OptIn(ExperimentalWasmJsInterop::class)
-public suspend fun PlatformFile.writeToOriginPrivateFileSystem(bytes: ByteArray) {
-    val file = webFile as? WebFile.OriginPrivateFile
-        ?: throw FileKitException("This file is not a writable origin private file system file")
-    val writable = file.handle.createWritable().await()
+public suspend fun WebFile.OriginPrivateFile.write(bytes: ByteArray) {
+    val writable = handle.createWritable().await()
     try {
         writable.write(bytes.toWebBytes()).await()
     } finally {
         writable.close().await()
     }
 }
-
-public actual suspend fun FileKit.filesDirectory(): PlatformFile =
-    PlatformFile.fromOriginPrivateFileSystem()
-
-public actual suspend fun FileKit.cacheDirectory(): PlatformFile =
-    filesDirectory().originPrivateFileSystemDirectory(name = "cache", create = true)
-
-public actual suspend fun FileKit.databasesDirectory(): PlatformFile =
-    filesDirectory().originPrivateFileSystemDirectory(name = "databases", create = true)
 
 internal fun String.appendOriginPrivateFileSystemPath(child: String): String =
     if (isEmpty()) child else "$this/$child"
@@ -148,14 +127,18 @@ internal external interface FileSystemHandle : JsAny {
 @OptIn(ExperimentalWasmJsInterop::class)
 internal external interface FileSystemFileHandle : FileSystemHandle {
     fun getFile(): Promise<BrowserFile>
+
     fun createWritable(): Promise<FileSystemWritableFileStream>
 }
 
 @OptIn(ExperimentalWasmJsInterop::class)
 internal external interface FileSystemDirectoryHandle : FileSystemHandle {
     fun values(): FileSystemDirectoryHandleIterator
+
     fun getFileHandle(name: String, options: FileSystemGetHandleOptions): Promise<FileSystemFileHandle>
+
     fun getDirectoryHandle(name: String, options: FileSystemGetHandleOptions): Promise<FileSystemDirectoryHandle>
+
     fun removeEntry(name: String): Promise<JsAny?>
 }
 
@@ -182,6 +165,7 @@ internal fun FileSystemGetHandleOptions(create: Boolean): FileSystemGetHandleOpt
 @OptIn(ExperimentalWasmJsInterop::class)
 internal external interface FileSystemWritableFileStream : JsAny {
     fun write(data: JsAny): Promise<JsAny?>
+
     fun close(): Promise<JsAny?>
 }
 

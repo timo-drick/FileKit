@@ -2,8 +2,8 @@ package io.github.vinceglb.filekit
 
 import io.github.vinceglb.filekit.exceptions.FileKitException
 import io.github.vinceglb.filekit.mimeType.MimeType
-import kotlinx.coroutines.await
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.await
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -58,8 +58,13 @@ public actual val PlatformFile.nameWithoutExtension: String
 
 public actual fun PlatformFile.size(): Long = when (val file = webFile) {
     is WebFile.FileWrapper -> file.size
+
     is WebFile.DirectoryWrapper -> 0
+
+    // Unfortunately, we cannot support this synchronously :-(
+    // Maybe the size function should be deprecated or removed from web target
     is WebFile.OriginPrivateFile -> 0
+
     is WebFile.OriginPrivateDirectory -> 0
 }
 
@@ -84,12 +89,16 @@ public actual fun PlatformFile.mimeType(): MimeType? = when (val file = webFile)
 
     is WebFile.OriginPrivateFile,
     is WebFile.OriginPrivateDirectory,
-    -> null
+    -> {
+        null
+    }
 }
 
 public actual fun PlatformFile.lastModified(): Instant = when (val file = webFile) {
     is WebFile.FileWrapper -> file.lastModified
+
     is WebFile.DirectoryWrapper -> file.lastModified
+
     is WebFile.OriginPrivateFile,
     is WebFile.OriginPrivateDirectory,
     -> WEB_DIRECTORY_LAST_MODIFIED
@@ -113,9 +122,18 @@ public actual inline fun PlatformFile.list(block: (List<PlatformFile>) -> Unit) 
 }
 
 public actual fun PlatformFile.list(): List<PlatformFile> = when (val file = webFile) {
-    is WebFile.FileWrapper -> throw FileKitException("Cannot list a regular file")
-    is WebFile.DirectoryWrapper -> file.children.map { it.toPlatformFile() }
-    is WebFile.OriginPrivateFile -> throw FileKitException("Cannot list a regular file")
+    is WebFile.FileWrapper -> {
+        throw FileKitException("Cannot list a regular file")
+    }
+
+    is WebFile.DirectoryWrapper -> {
+        file.children.map { it.toPlatformFile() }
+    }
+
+    is WebFile.OriginPrivateFile -> {
+        throw FileKitException("Cannot list a regular file")
+    }
+
     is WebFile.OriginPrivateDirectory -> {
         throw FileKitException("Origin private file system directories must be listed asynchronously")
     }
@@ -127,11 +145,24 @@ public actual fun PlatformFile.stopAccessingSecurityScopedResource() {}
 
 @OptIn(ExperimentalWasmJsInterop::class)
 public actual suspend fun PlatformFile.readBytes(): ByteArray = when (val file = webFile) {
-    is WebFile.FileWrapper -> file.file.readBytes()
+    is WebFile.FileWrapper -> {
+        file.file.readBytes()
+    }
 
-    is WebFile.DirectoryWrapper -> throw FileKitException("Cannot read bytes from a directory")
-    is WebFile.OriginPrivateFile -> file.handle.getFile().await().readBytes()
-    is WebFile.OriginPrivateDirectory -> throw FileKitException("Cannot read bytes from a directory")
+    is WebFile.DirectoryWrapper -> {
+        throw FileKitException("Cannot read bytes from a directory")
+    }
+
+    is WebFile.OriginPrivateFile -> {
+        file.handle
+            .getFile()
+            .await()
+            .readBytes()
+    }
+
+    is WebFile.OriginPrivateDirectory -> {
+        throw FileKitException("Cannot read bytes from a directory")
+    }
 }
 
 public actual suspend fun PlatformFile.readString(): String =
@@ -163,5 +194,45 @@ private suspend fun BrowserFile.readBytes(): ByteArray = withContext(Dispatchers
         }
 
         reader.readAsArrayBuffer(this@readBytes)
+    }
+}
+
+public actual suspend infix fun PlatformFile.write(bytes: ByteArray) {
+    when (webFile) {
+        is WebFile.OriginPrivateFile -> webFile.write(bytes)
+        else -> throw FileKitException("This file is not a writable origin private file system file")
+    }
+}
+
+public actual suspend fun PlatformFile.writeString(string: String) {
+    write(string.encodeToByteArray())
+}
+
+@OptIn(ExperimentalWasmJsInterop::class)
+public actual suspend fun PlatformFile.delete(mustExist: Boolean, recursively: Boolean) {
+    when (val file = webFile) {
+        is WebFile.OriginPrivateFile -> {
+            val parent = file.parent
+                ?: throw FileKitException("Cannot delete the origin private file system root")
+            if (mustExist) {
+                parent.handle.removeEntry(file.name).await()
+            } else {
+                runCatching { parent.handle.removeEntry(file.name).await() }
+            }
+        }
+
+        is WebFile.OriginPrivateDirectory -> {
+            val parent = file.parent
+                ?: throw FileKitException("Cannot delete the origin private file system root")
+            if (mustExist) {
+                parent.handle.removeEntry(file.name).await()
+            } else {
+                runCatching { parent.handle.removeEntry(file.name).await() }
+            }
+        }
+
+        else -> {
+            throw FileKitException("This file is not a writable origin private file system entry")
+        }
     }
 }
