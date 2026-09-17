@@ -87,7 +87,10 @@ public expect fun PlatformFile.mimeType(): MimeType?
 public expect val PlatformFile.path: String
 
 /**
- * Returns the parent of this file, or null if it does not have a parent.
+ * Returns the parent of this file, or null if it has no parent or its parent cannot be determined.
+ *
+ * On Android, content URI parents are supported for external-storage document trees.
+ * Returns null at the selected tree root and for other content URIs.
  *
  * @return The parent [PlatformFile], or null.
  */
