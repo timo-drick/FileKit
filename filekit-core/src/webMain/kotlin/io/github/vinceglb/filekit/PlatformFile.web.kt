@@ -58,13 +58,8 @@ public actual val PlatformFile.nameWithoutExtension: String
 
 public actual fun PlatformFile.size(): Long = when (val file = webFile) {
     is WebFile.FileWrapper -> file.size
-
     is WebFile.DirectoryWrapper -> 0
-
-    // Unfortunately, we cannot support this synchronously :-(
-    // Maybe the size function should be deprecated or removed from web target
-    is WebFile.OriginPrivateFile -> 0
-
+    is WebFile.OriginPrivateFile -> file.size
     is WebFile.OriginPrivateDirectory -> 0
 }
 
@@ -87,21 +82,22 @@ public actual fun PlatformFile.mimeType(): MimeType? = when (val file = webFile)
         null
     }
 
-    is WebFile.OriginPrivateFile,
-    is WebFile.OriginPrivateDirectory,
-    -> {
+    is WebFile.OriginPrivateFile -> {
+        file.type
+            .takeIf { it.isNotBlank() }
+            ?.let { MimeType.parse(it) }
+    }
+
+    is WebFile.OriginPrivateDirectory -> {
         null
     }
 }
 
 public actual fun PlatformFile.lastModified(): Instant = when (val file = webFile) {
     is WebFile.FileWrapper -> file.lastModified
-
     is WebFile.DirectoryWrapper -> file.lastModified
-
-    is WebFile.OriginPrivateFile,
-    is WebFile.OriginPrivateDirectory,
-    -> WEB_DIRECTORY_LAST_MODIFIED
+    is WebFile.OriginPrivateFile -> file.lastModified
+    is WebFile.OriginPrivateDirectory -> WEB_DIRECTORY_LAST_MODIFIED
 }
 
 public actual fun PlatformFile.parent(): PlatformFile? = when (val file = webFile) {

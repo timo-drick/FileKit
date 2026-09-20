@@ -44,19 +44,27 @@ internal suspend fun WebFile.OriginPrivateDirectory.list(): List<PlatformFile> {
         val path = path.appendOriginPrivateFileSystemPath(handle.name)
         entries += PlatformFile(
             when (handle.kind) {
-                "file" -> WebFile.OriginPrivateFile(
-                    handle = handle.unsafeCast<FileSystemFileHandle>(),
-                    path = path,
-                    parent = this,
-                )
+                "file" -> {
+                    val fileHandle = handle.unsafeCast<FileSystemFileHandle>()
+                    WebFile.OriginPrivateFile(
+                        handle = fileHandle,
+                        fileSnapshot = fileHandle.getFile().await(),
+                        path = path,
+                        parent = this,
+                    )
+                }
 
-                "directory" -> WebFile.OriginPrivateDirectory(
-                    handle = handle.unsafeCast<FileSystemDirectoryHandle>(),
-                    path = path,
-                    parent = this,
-                )
+                "directory" -> {
+                    WebFile.OriginPrivateDirectory(
+                        handle = handle.unsafeCast<FileSystemDirectoryHandle>(),
+                        path = path,
+                        parent = this,
+                    )
+                }
 
-                else -> throw FileKitException("Unsupported origin private file system entry type: ${handle.kind}")
+                else -> {
+                    throw FileKitException("Unsupported origin private file system entry type: ${handle.kind}")
+                }
             },
         )
     }
@@ -69,13 +77,17 @@ internal suspend fun WebFile.OriginPrivateDirectory.list(): List<PlatformFile> {
 internal suspend fun WebFile.OriginPrivateDirectory.file(
     name: String,
     create: Boolean = false,
-): PlatformFile = PlatformFile(
-    WebFile.OriginPrivateFile(
-        handle = handle.getFileHandle(name, FileSystemGetHandleOptions(create)).await(),
-        path = path.appendOriginPrivateFileSystemPath(name),
-        parent = this,
-    ),
-)
+): PlatformFile {
+    val fileHandle = handle.getFileHandle(name, FileSystemGetHandleOptions(create)).await()
+    return PlatformFile(
+        WebFile.OriginPrivateFile(
+            handle = fileHandle,
+            fileSnapshot = fileHandle.getFile().await(),
+            path = path.appendOriginPrivateFileSystemPath(name),
+            parent = this,
+        ),
+    )
+}
 
 /** Returns an OPFS directory in this directory, creating it when [create] is true. */
 @OptIn(ExperimentalWasmJsInterop::class)

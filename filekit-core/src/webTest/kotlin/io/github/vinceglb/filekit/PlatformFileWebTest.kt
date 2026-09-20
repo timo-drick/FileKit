@@ -206,6 +206,26 @@ class PlatformFileWebTest {
         assertEquals("", filesDir.path)
     }
 
+    @Test
+    fun testOriginPrivateFileUpdateRefreshesSnapshotAttributes() = runTest {
+        val root = FileKit.filesDirectory()
+        val name = "filekit-attributes-test.txt"
+        val file = root.file(name, create = true)
+
+        try {
+            file.writeString("Hello")
+
+            assertEquals(0L, file.size())
+
+            file.update()
+
+            assertEquals(5L, file.size())
+            assertTrue(file.lastModified() > Instant.fromEpochMilliseconds(0))
+        } finally {
+            file.delete(mustExist = false)
+        }
+    }
+
     private fun PlatformFile.webFileWrapper(): WebFile.FileWrapper =
         assertIs<WebFile.FileWrapper>(webFile)
 }

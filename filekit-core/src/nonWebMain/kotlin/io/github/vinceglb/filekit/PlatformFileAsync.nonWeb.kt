@@ -42,3 +42,5 @@ public actual suspend fun PlatformFile.mimeTypeAsync(): MimeType? = mimeType()
 
 @OptIn(ExperimentalTime::class)
 public actual suspend fun PlatformFile.lastModifiedAsync(): Instant = lastModified()
+
+internal actual suspend fun PlatformFile.updatePlatformData() {}

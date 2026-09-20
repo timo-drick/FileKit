@@ -31,3 +31,14 @@ public expect suspend fun PlatformFile.mimeTypeAsync(): MimeType?
 /** Returns this file's current modification time. */
 @OptIn(ExperimentalTime::class)
 public expect suspend fun PlatformFile.lastModifiedAsync(): Instant
+
+/**
+ * Refreshes metadata cached by this platform file.
+ *
+ * Files whose metadata is read directly from their backing filesystem do not need an update.
+ */
+public suspend fun PlatformFile.update() {
+    updatePlatformData()
+}
+
+internal expect suspend fun PlatformFile.updatePlatformData()

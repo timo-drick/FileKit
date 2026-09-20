@@ -117,3 +117,11 @@ public actual suspend fun PlatformFile.lastModifiedAsync(): Instant = when (val 
             .toLong(),
     )
 }
+
+@OptIn(ExperimentalWasmJsInterop::class)
+internal actual suspend fun PlatformFile.updatePlatformData() {
+    when (val file = webFile) {
+        is WebFile.OriginPrivateFile -> file.updateSnapshot(file.handle.getFile().await())
+        else -> Unit
+    }
+}
