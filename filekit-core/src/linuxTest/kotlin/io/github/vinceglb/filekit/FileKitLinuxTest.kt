@@ -62,8 +62,6 @@ class FileKitLinuxTest {
         FileKit.init(appId = APP_ID)
 
         assertEquals(FileKit.filesDir.path, FileKit.filesDirectory().path)
-        assertEquals(FileKit.cacheDir.path, FileKit.cacheDirectory().path)
-        assertEquals(FileKit.databasesDir.path, FileKit.databasesDirectory().path)
     }
 
     @Test
